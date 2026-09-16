@@ -4,7 +4,7 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 
 const SCRIPT_URL =
-  "https://script.google.com/macros/s/AKfycbzAmi4CxrSFnHg4A04QRK1Qz6hlHum3eVO8SdBm5bVJG2fddciDqmeVkDYV-ioepKaO/exec";
+  "https://script.google.com/macros/s/AKfycbywFsFG_8kGWZQE-oadmhQixuaXih7m1O3ZcPpmneGz8Gy4NcO2HmSed_OcHkcVgQYx/exec";
 
 app.use(express.json());
 app.use(express.static("public"));
