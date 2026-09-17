@@ -6,9 +6,11 @@
 var COLS = {
   ano2025: 3, ano2026: 4, ano2027: 5, carimbo: 6, numero: 7, nome: 8,
   morada: 9, localidade: 10, codigoPostal: 11, nascimento: 12, contacto: 13,
-  email: 14, nif: 15, termo: 16, dataPagamento: 17, modo: 18, notas: 19, ativo: 20
+  email: 14, nif: 15, termo: 16, dataPagamento: 17, modo: 18, notas: 19, ativo: 20,
+  modo2025: 21, modo2026: 22, modo2027: 23
 };
 var FIRST_DATA_ROW = 3;
+var NUM_COLS = 21; // colunas 3 a 23 (23 - 3 + 1)
 
 function doGet(e) {
   return respond_({ ok: true, subscribers: listSubscribers_() });
@@ -49,6 +51,11 @@ function ensureAtivoHeader_(sheet) {
   if (!header) {
     sheet.getRange(1, COLS.ativo).setValue('Ativo');
   }
+  var modoHeaders = { modo2025: 'Método 2025', modo2026: 'Método 2026', modo2027: 'Método 2027' };
+  Object.keys(modoHeaders).forEach(function (key) {
+    var cell = sheet.getRange(1, COLS[key]);
+    if (!cell.getValue()) cell.setValue(modoHeaders[key]);
+  });
 }
 
 function listSubscribers_() {
@@ -56,7 +63,7 @@ function listSubscribers_() {
   var lastRow = sheet.getLastRow();
   if (lastRow < FIRST_DATA_ROW) return [];
   var numRows = lastRow - FIRST_DATA_ROW + 1;
-  var values = sheet.getRange(FIRST_DATA_ROW, 3, numRows, 18).getValues();
+  var values = sheet.getRange(FIRST_DATA_ROW, 3, numRows, NUM_COLS).getValues();
   var list = [];
   for (var i = 0; i < values.length; i++) {
     var row = values[i];
@@ -97,7 +104,7 @@ function addSubscriber_(data) {
 }
 
 function listOne_(sheet, rowIndex) {
-  var range = sheet.getRange(rowIndex, 3, 1, 18).getValues()[0];
+  var range = sheet.getRange(rowIndex, 3, 1, NUM_COLS).getValues()[0];
   var obj = { rowIndex: rowIndex };
   Object.keys(COLS).forEach(function (key) {
     var v = range[COLS[key] - 3];
