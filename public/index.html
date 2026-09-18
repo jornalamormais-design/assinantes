@@ -231,6 +231,7 @@
 
 <div class="toolbar">
   <input type="text" id="searchInput" placeholder="Pesquisar por nome, nº ou localidade…">
+  <button class="btn-secondary" id="reloadBtn" title="Recarrega os dados mais recentes da Sheet">Atualizar</button>
   <button class="btn-secondary" id="filterActiveBtn">Só ativos</button>
   <button class="btn-secondary" id="filterCotaBtn">Cota em atraso</button>
   <button class="btn-secondary" id="filterAcertarBtn">Por acertar</button>
@@ -282,7 +283,7 @@
     </div>
 
     <div class="field-row">
-      <div class="field"><label>Pagamento 2025</label><input id="f_ano2025" type="date"></div>
+      <div class="field"><label>Pagamento 2025</label><input id="f_ano2025" type="text" placeholder="AAAA-MM-DD ou X"></div>
       <div class="field"><label>Método 2025</label>
         <select id="f_modo2025">
           <option value="">—</option>
@@ -293,7 +294,7 @@
       </div>
     </div>
     <div class="field-row">
-      <div class="field"><label>Pagamento 2026</label><input id="f_ano2026" type="date"></div>
+      <div class="field"><label>Pagamento 2026</label><input id="f_ano2026" type="text" placeholder="AAAA-MM-DD ou X"></div>
       <div class="field"><label>Método 2026</label>
         <select id="f_modo2026">
           <option value="">—</option>
@@ -304,7 +305,7 @@
       </div>
     </div>
     <div class="field-row">
-      <div class="field"><label>Pagamento 2027</label><input id="f_ano2027" type="date"></div>
+      <div class="field"><label>Pagamento 2027</label><input id="f_ano2027" type="text" placeholder="AAAA-MM-DD ou X"></div>
       <div class="field"><label>Método 2027</label>
         <select id="f_modo2027">
           <option value="">—</option>
@@ -437,13 +438,15 @@ const VALOR_MENSAL = VALOR_ANUAL / 12; // 1,25€
 const MESES_PT = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const MESES_PT_ABREV = MESES_PT.map(m => m.slice(0,3));
 
-// Interpreta o campo "termo" em vários formatos: "2026-12", "dezembro/2026",
+// Interpreta o campo "termo" em vários formatos: "2026-12", "2026-12-01" (data
+// completa, ex: quando a Sheets converte automaticamente), "dezembro/2026",
 // "dezembro 2026", "dez/2026", "dez.2026"... Devolve {ano, mes} ou null se não conseguir.
 function parseTermo(v){
   if (!v) return null;
   const s = v.toString().trim().toLowerCase();
 
-  let m = s.match(/^(\d{4})-(\d{2})$/);
+  // "2026-12" ou "2026-12-01..." (ignora o dia/hora se vier uma data completa)
+  let m = s.match(/^(\d{4})-(\d{2})(?:-\d{2}.*)?$/);
   if (m) return { ano: parseInt(m[1],10), mes: parseInt(m[2],10) };
 
   m = s.match(/^([\p{L}]+)[\s/.\-]+(\d{4})$/u);
@@ -455,6 +458,19 @@ function parseTermo(v){
   }
 
   return null;
+}
+
+// Limpa o valor a mostrar no campo de edição: se vier uma data completa
+// (ex: "2026-12-01", convertida pela Sheets), simplifica para "2026-12".
+// Texto livre (ex: "dezembro/2026") mantém-se tal como está.
+function normalizeTermoInput(v){
+  const s = (v || '').toString().trim();
+  if (!s) return '';
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)){
+    const t = parseTermo(s);
+    if (t) return t.ano + '-' + String(t.mes).padStart(2,'0');
+  }
+  return s;
 }
 
 function formatMonthYear(v){
@@ -654,7 +670,7 @@ function openEdit(s){
   set('f_contacto', s?.contacto);
   set('f_email', s?.email);
   set('f_nascimento', formatDateOnly(s?.nascimento));
-  set('f_termo', s?.termo);
+  set('f_termo', normalizeTermoInput(s?.termo));
   updateTermoInfo();
   set('f_notas', s?.notas);
   document.getElementById('f_ano2025').value = formatDateOnly(s?.ano2025);
@@ -764,6 +780,7 @@ function openReport(){
 }
 
 document.getElementById('searchInput').addEventListener('input', render);
+document.getElementById('reloadBtn').addEventListener('click', loadData);
 document.getElementById('filterActiveBtn').addEventListener('click', (e) => {
   showOnlyActive = !showOnlyActive;
   e.target.style.background = showOnlyActive ? 'var(--brand-red)' : '';
